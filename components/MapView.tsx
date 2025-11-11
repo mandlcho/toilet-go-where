@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import type { Location, Place, PlaceCategory } from '../types';
+import type { Location, Toilet } from '../types';
 import { reverseGeocode } from '../services/geminiService';
 
 const userIconSvg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="50" cy="50" r="45" fill="#3B82F6" stroke="#FFFFFF" stroke-width="10"/></svg>`;
 const toiletIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="5" r="2" /><path d="M9 7v10H5V7z" /><line x1="12" y1="4" x2="12" y2="20" /><circle cx="17" cy="5" r="2" /><path d="M15 7l2 10 2-10z" /></svg>`;
-const atmIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><path d="M6 9h12"/><path d="M8 13h3v4"/></svg>`;
 
 const userIcon = new L.DivIcon({
   html: `<div class="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center border-4 border-white shadow-lg">${userIconSvg.replace('<svg', '<svg fill="white"')}</div>`,
@@ -16,20 +15,13 @@ const userIcon = new L.DivIcon({
   popupAnchor: [0, -20],
 });
 
-function createPlaceIcon(backgroundClass: string, colorClass: string, svg: string) {
-  return new L.DivIcon({
-    html: `<div class="rounded-full p-1 w-10 h-10 flex items-center justify-center shadow-md ${backgroundClass} ${colorClass}">${svg}</div>`,
-    className: 'dummy',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -25],
-  });
-}
-
-const categoryIcons: Record<PlaceCategory, L.DivIcon> = {
-  toilet: createPlaceIcon('bg-white', 'text-gray-800', toiletIconSvg),
-  atm: createPlaceIcon('bg-green-50', 'text-green-600', atmIconSvg),
-};
+const toiletIcon = new L.DivIcon({
+  html: `<div class="bg-white rounded-full p-1 w-10 h-10 flex items-center justify-center shadow-md">${toiletIconSvg}</div>`,
+  className: 'dummy',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -25],
+});
 
 function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
@@ -70,8 +62,8 @@ function MapEventsHandler({
   return null;
 }
 
-const PlacePopupContent: React.FC<{ place: Place }> = ({ place }) => {
-  const [address, setAddress] = useState(place.address);
+const ToiletPopupContent: React.FC<{ toilet: Toilet }> = ({ toilet }) => {
+  const [address, setAddress] = useState(toilet.address);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -79,7 +71,7 @@ const PlacePopupContent: React.FC<{ place: Place }> = ({ place }) => {
       if (address === 'address not available') {
         setIsLoading(true);
         try {
-          const newAddress = await reverseGeocode(place.location);
+          const newAddress = await reverseGeocode(toilet.location);
           setAddress(newAddress);
         } catch (error) {
           console.error("failed to reverse geocode:", error);
@@ -91,25 +83,18 @@ const PlacePopupContent: React.FC<{ place: Place }> = ({ place }) => {
     };
 
     fetchAddress();
-  }, [place, address]);
+  }, [toilet, address]);
   
   const handleGoClick = () => {
-    const { lat, lng } = place.location;
+    const { lat, lng } = toilet.location;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     window.open(url, '_blank');
   };
 
   return (
     <div className="text-sm w-60" style={{ minHeight: '60px' }}>
-      <h3 className="font-bold text-base mb-1 break-words">{place.name}</h3>
-      {place.category === 'toilet' && place.housedIn && (
-        <p className="text-gray-600 mb-1 break-words">inside: {place.housedIn}</p>
-      )}
-      {place.category === 'atm' && (place.operator || place.network || place.brand) && (
-        <p className="text-gray-600 mb-1 break-words">
-          {[place.operator, place.network, place.brand].filter(Boolean).join(' • ')}
-        </p>
-      )}
+      <h3 className="font-bold text-base mb-1 break-words">{toilet.name}</h3>
+      {toilet.housedIn && <p className="text-gray-600 mb-1 break-words">inside: {toilet.housedIn}</p>}
       <p className="mb-2 break-words">{isLoading ? 'looking up address...' : address}</p>
       <button 
         onClick={handleGoClick}
@@ -123,17 +108,17 @@ const PlacePopupContent: React.FC<{ place: Place }> = ({ place }) => {
 
 interface MapViewProps {
   userLocation: Location | null;
-  places: Place[];
+  toilets: Toilet[];
   center: Location;
   zoom: number;
   onViewportChanged: (center: Location, zoom: number) => void;
 }
 
-const MapView: React.FC<MapViewProps> = ({ userLocation, places, center, zoom, onViewportChanged }) => {
+const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, onViewportChanged }) => {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
 
-  const visiblePlaces = bounds
-    ? places.filter(place => bounds.contains([place.location.lat, place.location.lng]))
+  const visibleToilets = bounds
+    ? toilets.filter(toilet => bounds.contains([toilet.location.lat, toilet.location.lng]))
     : [];
 
   return (
@@ -149,14 +134,10 @@ const MapView: React.FC<MapViewProps> = ({ userLocation, places, center, zoom, o
           <Popup>you are here.</Popup>
         </Marker>
       )}
-      {visiblePlaces.map((place) => (
-        <Marker
-          key={place.id}
-          position={[place.location.lat, place.location.lng]}
-          icon={categoryIcons[place.category] || categoryIcons.toilet}
-        >
+      {visibleToilets.map((toilet) => (
+        <Marker key={toilet.id} position={[toilet.location.lat, toilet.location.lng]} icon={toiletIcon}>
           <Popup>
-            <PlacePopupContent place={place} />
+            <ToiletPopupContent toilet={toilet} />
           </Popup>
         </Marker>
       ))}

@@ -1,4 +1,4 @@
-import type { Location, Place } from '../types';
+import type { Location, Toilet } from '../types';
 
 interface OverpassElement {
   id: number;
@@ -25,7 +25,7 @@ interface OverpassElement {
   nodes?: number[];
 }
 
-export async function findToilets(location: Location): Promise<Place[]> {
+export async function findToilets(location: Location): Promise<Toilet[]> {
   const bboxDelta = 0.05; 
   const south = location.lat - bboxDelta;
   const west = location.lng - bboxDelta;
@@ -75,7 +75,7 @@ export async function findToilets(location: Location): Promise<Place[]> {
         e.tags?.amenity === 'toilets' || (e.tags?.railway === 'station' && e.tags?.toilets === 'yes')
       );
 
-      return toiletElements.map((element: OverpassElement): Place => {
+      return toiletElements.map((element: OverpassElement): Toilet => {
         const loc = {
             lat: element.center?.lat || element.lat,
             lng: element.center?.lon || element.lon
@@ -105,7 +105,6 @@ export async function findToilets(location: Location): Promise<Place[]> {
         return {
           id: element.id.toString(),
           name: name.toLowerCase(),
-          category: 'toilet',
           location: loc,
           address: address.toLowerCase(),
           housedIn: housedIn?.toLowerCase(),

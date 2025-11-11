@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { reverseGeocode, findToilets } from './services/geminiService';
-import { findAtms } from './services/osmService';
 import MapView from './components/MapView';
-import type { Location, Place, PlaceCategory } from './types';
+import type { Location, Toilet } from './types';
 
 const DEFAULT_CENTER: Location = { lat: 1.3521, lng: 103.8198 }; // Default to Singapore
 const DEFAULT_ZOOM = 12;
@@ -11,16 +10,6 @@ type FilterState = {
   free: boolean;
   wheelchair: boolean;
   diaper: boolean;
-};
-
-const CATEGORY_OPTIONS: Array<{ id: PlaceCategory; label: string; description: string }> = [
-  { id: 'toilet', label: 'toilets', description: 'public restrooms nearby' },
-  { id: 'atm', label: 'atm machines', description: 'grab cash fast' },
-];
-
-const CATEGORY_LABELS: Record<PlaceCategory, string> = {
-  toilet: 'toilets',
-  atm: 'atms',
 };
 
 const CheckmarkIcon: React.FC = () => (
@@ -33,13 +22,8 @@ const App: React.FC = () => {
   const [location, setLocation] = useState<Location | null>(null);
   const [status, setStatus] = useState<string>('checking permissions...');
   const [locationName, setLocationName] = useState<string>('awaiting permissions...');
-  const [activeCategory, setActiveCategory] = useState<PlaceCategory | null>(null);
-  const [resultsByCategory, setResultsByCategory] = useState<Record<PlaceCategory, Place[]>>({
-    toilet: [],
-    atm: [],
-  });
-  const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
-  const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [toilets, setToilets] = useState<Toilet[]>([]);
+  const [filteredToilets, setFilteredToilets] = useState<Toilet[]>([]);
   const [isFinding, setIsFinding] = useState<boolean>(false);
   const [mapCenter, setMapCenter] = useState<Location>(DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState<number>(DEFAULT_ZOOM);
@@ -123,19 +107,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!activeCategory) {
-      setFilteredPlaces([]);
-      return;
-    }
-
-    const basePlaces = resultsByCategory[activeCategory] || [];
-
-    if (activeCategory !== 'toilet') {
-      setFilteredPlaces(basePlaces);
-      return;
-    }
-
-    let toiletsToFilter = [...basePlaces];
+    let toiletsToFilter = [...toilets];
     if (filters.free) {
       toiletsToFilter = toiletsToFilter.filter(t => t.fee === true);
     }
@@ -145,28 +117,20 @@ const App: React.FC = () => {
     if (filters.diaper) {
       toiletsToFilter = toiletsToFilter.filter(t => t.diaper === true);
     }
-    setFilteredPlaces(toiletsToFilter);
-  }, [resultsByCategory, filters, activeCategory]);
+    setFilteredToilets(toiletsToFilter);
+  }, [toilets, filters]);
 
-  const handleCategorySearch = async (category: PlaceCategory) => {
+  const handleFindToilets = async () => {
     if (!location) {
-      alert("cannot find places without your location. please grant access and try again.");
+      alert("cannot find toilets without your location. please grant access and try again.");
       return;
     }
-    setIsPickerOpen(false);
-    setActiveCategory(category);
     setIsFinding(true);
     try {
-      let foundPlaces: Place[] = [];
-      if (category === 'toilet') {
-        foundPlaces = await findToilets(location);
-      } else {
-        foundPlaces = await findAtms(location);
-      }
-      setResultsByCategory(prev => ({ ...prev, [category]: foundPlaces }));
-      if (foundPlaces.length === 0) {
-        const label = category === 'toilet' ? 'toilets' : 'atms';
-        alert(`no ${label} found nearby.`);
+      const foundToilets = await findToilets(location);
+      setToilets(foundToilets);
+      if (foundToilets.length === 0) {
+        alert("no toilets found nearby.");
       }
     } catch (error: any) {
       console.error(error);
@@ -174,13 +138,6 @@ const App: React.FC = () => {
     } finally {
       setIsFinding(false);
     }
-  };
-
-  const handleFindButtonClick = () => {
-    if (isFinding) {
-      return;
-    }
-    setIsPickerOpen(prev => !prev);
   };
   
   const handleFilterChange = (filterName: keyof FilterState) => {
@@ -199,13 +156,13 @@ const App: React.FC = () => {
     <div className="relative h-screen w-screen">
       <MapView 
         userLocation={location}
-        places={filteredPlaces}
+        toilets={filteredToilets}
         center={mapCenter}
         zoom={mapZoom}
         onViewportChanged={handleViewportChanged}
       />
 
-      {activeCategory === 'toilet' && resultsByCategory.toilet.length > 0 && !isFinding && (
+      {toilets.length > 0 && !isFinding && (
         <div className="absolute top-1/2 -translate-y-1/2 right-4 flex flex-col items-center space-y-3">
             <button 
                 onClick={() => handleFilterChange('free')}
@@ -235,45 +192,17 @@ const App: React.FC = () => {
       )}
       
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md text-center">
-        <div className="relative">
-          <button
-            onClick={handleFindButtonClick}
-            disabled={isFinding}
-            className="w-full px-6 py-3 text-base font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
-          >
-            {isFinding ? 'finding...' : 'find it'}
-          </button>
-          {isPickerOpen && (
-            <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-full bg-white border border-gray-200 rounded-xl shadow-lg text-left p-3 space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">what do you need?</p>
-              {CATEGORY_OPTIONS.map(option => (
-                <button
-                  key={option.id}
-                  onClick={() => handleCategorySearch(option.id)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{option.label}</p>
-                      <p className="text-[11px] text-gray-500">{option.description}</p>
-                    </div>
-                    <span className="text-[11px] text-gray-500">
-                      {resultsByCategory[option.id].length > 0 ? `${resultsByCategory[option.id].length} saved` : 'search'}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <button
+          onClick={handleFindToilets}
+          disabled={!location || isFinding}
+          className="px-6 py-3 text-base font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
+        >
+          {isFinding ? 'finding...' : `find toilets (${filteredToilets.length})`}
+        </button>
 
         <div className="mt-3 text-[10px] text-black" style={{ textShadow: '0 0 4px white, 0 0 6px white' }}>
             <p><span className="font-bold">location access:</span> {status}</p>
             <p><span className="font-bold">current location:</span> {locationName}</p>
-            <p>
-              <span className="font-bold">showing:</span>{' '}
-              {activeCategory ? `${CATEGORY_LABELS[activeCategory]} (${filteredPlaces.length})` : 'choose a category'}
-            </p>
         </div>
       </div>
     </div>
