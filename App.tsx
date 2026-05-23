@@ -6,6 +6,7 @@ import MapView from './components/MapView';
 import BottomSheet from './components/BottomSheet';
 import ToiletDetail from './components/ToiletDetail';
 import Toast from './components/Toast';
+import PlaceList from './components/PlaceList';
 import type { Location, Toilet, ReviewUser } from './types';
 import { haversineDistance } from './utils/distance';
 
@@ -45,6 +46,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<ReviewUser | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'error'|'info'|'success'} | null>(null);
   const [showSearchHere, setShowSearchHere] = useState(false);
+  const [showList, setShowList] = useState(false);
   const lastSearchCenter = useRef<Location | null>(null);
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -365,6 +367,14 @@ const App: React.FC = () => {
           >
             atms
           </button>
+          <button
+            onClick={() => setShowList(true)}
+            disabled={!hasSearched || isFinding}
+            className="px-4 py-1.5 text-xs font-bold rounded-full transition-colors bg-white text-gray-600 border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            title="list view"
+          >
+            list
+          </button>
         </div>
 
         {/* Loading indicator */}
@@ -427,6 +437,15 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showList && (
+        <PlaceList
+          places={filteredToilets}
+          userLocation={location}
+          onSelect={setSelectedToilet}
+          onClose={() => setShowList(false)}
+        />
       )}
 
       <BottomSheet isOpen={selectedToilet !== null} onClose={() => setSelectedToilet(null)}>
