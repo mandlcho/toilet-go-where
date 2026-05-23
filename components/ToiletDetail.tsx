@@ -6,6 +6,7 @@ import { signInWithGoogle, signOut } from '../services/authService';
 import { formatDistance } from '../utils/distance';
 import StarRating from './StarRating';
 import ConditionTags from './ConditionTags';
+import FavoriteButton from './FavoriteButton';
 
 interface ToiletDetailProps {
   toilet: Toilet;
@@ -134,7 +135,10 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-bold">{toilet.name}</h2>
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-lg font-bold">{toilet.name}</h2>
+          <FavoriteButton place={toilet} userId={user?.uid ?? null} />
+        </div>
         {toilet.housedIn && <p className="text-xs text-gray-500">inside {toilet.housedIn}</p>}
         <p className="text-xs text-gray-500 mt-1">{address || 'loading address...'}</p>
         <p className="text-xs text-gray-400 mt-1">
