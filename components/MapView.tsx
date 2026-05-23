@@ -26,8 +26,24 @@ const toiletIcon = new L.DivIcon({
   popupAnchor: [0, -25],
 });
 
+const toiletIconHighlighted = new L.DivIcon({
+  html: `<div class="bg-blue-500 rounded-full p-1 w-10 h-10 flex items-center justify-center shadow-lg" style="filter:drop-shadow(0 0 8px #3b82f6) drop-shadow(0 0 3px #1d4ed8)">${toiletIconSvg.replace('stroke="currentColor"', 'stroke="white"')}</div>`,
+  className: 'dummy',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -25],
+});
+
 const atmIcon = new L.DivIcon({
   html: `<div class="bg-green-50 rounded-full p-1 w-10 h-10 flex items-center justify-center shadow-md text-green-600">${atmIconSvg}</div>`,
+  className: 'dummy',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -25],
+});
+
+const atmIconHighlighted = new L.DivIcon({
+  html: `<div class="bg-green-500 rounded-full p-1 w-10 h-10 flex items-center justify-center shadow-lg text-white" style="filter:drop-shadow(0 0 8px #16a34a) drop-shadow(0 0 3px #14532d)">${atmIconSvg}</div>`,
   className: 'dummy',
   iconSize: [40, 40],
   iconAnchor: [20, 20],
@@ -188,9 +204,10 @@ interface MapViewProps {
   zoom: number;
   onViewportChanged: (center: Location, zoom: number) => void;
   onToiletSelect: (toilet: Toilet) => void;
+  highlightedId?: string | null;
 }
 
-const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, onViewportChanged, onToiletSelect }) => {
+const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, onViewportChanged, onToiletSelect, highlightedId }) => {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
 
   const visibleToilets = bounds
@@ -227,7 +244,10 @@ const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, 
           <Marker
             key={toilet.id}
             position={[toilet.location.lat, toilet.location.lng]}
-            icon={toilet.category === 'atm' ? atmIcon : toiletIcon}
+            icon={toilet.id === highlightedId
+              ? (toilet.category === 'atm' ? atmIconHighlighted : toiletIconHighlighted)
+              : (toilet.category === 'atm' ? atmIcon : toiletIcon)
+            }
             eventHandlers={{
               click: () => onToiletSelect(toilet),
             }}

@@ -10,12 +10,14 @@ interface PlaceListProps {
   userLocation: Location | null;
   onSelect: (place: Toilet) => void;
   onClose: () => void;
+  onHighlight?: (id: string | null) => void;
 }
 
-const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, onClose }) => {
+const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, onClose, onHighlight }) => {
   const [translateY, setTranslateY] = useState(0);
   const [isFullHeight, setIsFullHeight] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [tappedId, setTappedId] = useState<string | null>(null);
   const dragStart = useRef<{ y: number; translate: number } | null>(null);
 
   const handleDragStart = (clientY: number) => {
@@ -112,11 +114,24 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
               place.diaper && 'diaper',
             ].filter(Boolean) as string[];
 
+            const isActive = tappedId === place.id;
+
             return (
               <button
                 key={place.id}
-                onClick={() => onSelect(place)}
-                className="w-full text-left px-5 py-3 border-b border-gray-50 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                onMouseEnter={() => { setTappedId(place.id); onHighlight?.(place.id); }}
+                onMouseLeave={() => { setTappedId(null); onHighlight?.(null); }}
+                onClick={() => {
+                  if (isActive) {
+                    onSelect(place);
+                    setTappedId(null);
+                    onHighlight?.(null);
+                  } else {
+                    setTappedId(place.id);
+                    onHighlight?.(place.id);
+                  }
+                }}
+                className={`w-full text-left px-5 py-3 border-b border-gray-50 transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50 active:bg-gray-100'}`}
               >
                 <p className="text-sm font-semibold truncate">{place.name}</p>
                 {place.address && place.address !== 'address not available' && (

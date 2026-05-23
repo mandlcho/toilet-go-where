@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PlaceList from '../../components/PlaceList';
 import type { Toilet } from '../../types';
@@ -70,6 +70,19 @@ describe('PlaceList', () => {
   it('shows "accessible" badge when wheelchair === true', () => {
     render(<PlaceList places={[mockPlaces[0]]} userLocation={null} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText('accessible')).toBeInTheDocument();
+  });
+
+  it('mobile two-tap: first tap highlights, second tap opens detail', () => {
+    const onSelect = vi.fn();
+    const onHighlight = vi.fn();
+    render(<PlaceList places={mockPlaces} userLocation={null} onSelect={onSelect} onClose={vi.fn()} onHighlight={onHighlight} />);
+    // First tap (no mouseenter — simulates touch)
+    fireEvent.click(screen.getByText('test toilet'));
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onHighlight).toHaveBeenCalledWith(mockPlaces[0].id);
+    // Second tap on same row
+    fireEvent.click(screen.getByText('test toilet'));
+    expect(onSelect).toHaveBeenCalledWith(mockPlaces[0]);
   });
 
   it('does not render "address not available" as visible text', () => {
