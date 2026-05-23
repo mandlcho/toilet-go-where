@@ -42,3 +42,10 @@ export interface ReviewUser {
   photoURL: string;
   email: string;
 }
+
+export interface ConditionTag {
+  id: string;       // Firestore doc ID: `${toiletId}_${tagKey}`
+  toiletId: string;
+  tagKey: string;
+  votes: string[];  // array of userIds who voted
+}
