@@ -5,6 +5,7 @@ import { reverseGeocode } from '../services/locationService';
 import { signInWithGoogle, signOut } from '../services/authService';
 import { formatDistance } from '../utils/distance';
 import StarRating from './StarRating';
+import ConditionTags from './ConditionTags';
 
 interface ToiletDetailProps {
   toilet: Toilet;
@@ -163,6 +164,9 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
           ))}
         </div>
       )}
+
+      {/* Condition tags */}
+      <ConditionTags toiletId={toilet.id} userId={user?.uid ?? null} />
 
       {/* Actions */}
       <div className="flex gap-2">
