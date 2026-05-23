@@ -5,6 +5,7 @@ import L from 'leaflet';
 import type { Location, Toilet } from '../types';
 import { reverseGeocode } from '../services/locationService';
 import { formatDistance } from '../utils/distance';
+import EditSuggestion from './EditSuggestion';
 
 const userIconSvg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="50" cy="50" r="45" fill="#3B82F6" stroke="#FFFFFF" stroke-width="10"/></svg>`;
 const toiletIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="5" r="2" /><path d="M9 7v10H5V7z" /><line x1="12" y1="4" x2="12" y2="20" /><circle cx="17" cy="5" r="2" /><path d="M15 7l2 10 2-10z" /></svg>`;
@@ -94,35 +95,6 @@ const ToiletPopupContent: React.FC<{ toilet: Toilet; userLocation: Location | nu
   const [isLoading, setIsLoading] = useState(false);
   const isAtm = toilet.category === 'atm';
 
-  const buildReportUrl = () => {
-    const { lat, lng } = toilet.location;
-    const title = `Listing issue: ${toilet.name} (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
-    const body = [
-      `Problem:`,
-      ``,
-      `- [ ] wrong location`,
-      `- [ ] not a toilet / removed`,
-      `- [ ] details are incorrect`,
-      `- [ ] other`,
-      ``,
-      `Listing:`,
-      `- name: ${toilet.name}`,
-      `- id: ${toilet.id}`,
-      `- category: ${toilet.category}`,
-      `- coordinates: ${lat}, ${lng}`,
-      `- address shown: ${address}`,
-      ``,
-      `Extra notes:`
-    ].join('\n');
-
-    const params = new URLSearchParams({
-      title,
-      body,
-    });
-
-    return `https://github.com/mandlcho/findit/issues/new?${params.toString()}`;
-  };
-
   useEffect(() => {
     let isCancelled = false;
 
@@ -185,14 +157,13 @@ const ToiletPopupContent: React.FC<{ toilet: Toilet; userLocation: Location | nu
       >
         go
       </button>
-      <a
-        href={buildReportUrl()}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-2 block text-center text-[11px] font-semibold text-gray-600 underline underline-offset-2"
-      >
-        report this listing
-      </a>
+      <div className="mt-2 flex justify-center">
+        <EditSuggestion
+          placeId={toilet.id}
+          placeName={toilet.name}
+          userId={null}
+        />
+      </div>
     </div>
   );
 };
