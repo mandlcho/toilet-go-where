@@ -467,7 +467,7 @@ const App: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowInstallPrompt(false)}
-                className="text-gray-400 hover:text-gray-600 flex-shrink-0 ml-2"
+                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 flex-shrink-0 rounded-full hover:bg-gray-100 -mr-2 -mt-1"
                 aria-label="Close"
               >
                 ✕
@@ -481,9 +481,10 @@ const App: React.FC = () => {
         <PlaceList
           places={filteredToilets}
           userLocation={location}
-          onSelect={setSelectedToilet}
+          onSelect={handleToiletSelect}
           onClose={() => setShowList(false)}
           onHighlight={setHighlightedId}
+          onFocus={(place) => { setMapCenter(place.location); setMapZoom(17); }}
         />
       )}
 
@@ -492,12 +493,22 @@ const App: React.FC = () => {
         onClose={() => { setSelectedToilet(null); clearShareParams(); }}
       >
         {selectedToilet && (
-          <ToiletDetail
-            toilet={selectedToilet}
-            user={currentUser}
-            onUserChange={() => {}}
-            userLocation={location}
-          />
+          <>
+            {showList && (
+              <button
+                onClick={() => { setSelectedToilet(null); clearShareParams(); }}
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 mb-3 -mt-1 hover:text-blue-800"
+              >
+                ← results
+              </button>
+            )}
+            <ToiletDetail
+              toilet={selectedToilet}
+              user={currentUser}
+              onUserChange={() => {}}
+              userLocation={location}
+            />
+          </>
         )}
       </BottomSheet>
     </div>
