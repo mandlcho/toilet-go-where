@@ -1,6 +1,13 @@
 {
   "features": [
     {
+      "id": "test-setup",
+      "title": "Test Infrastructure",
+      "description": "Install vitest + @testing-library/react. Must be done before any other feature.",
+      "status": "pending",
+      "plan": "plans/2026-05-23-test-setup.md"
+    },
+    {
       "id": "list-view",
       "title": "List View",
       "description": "Scrollable list of results alongside the map, sorted by distance",

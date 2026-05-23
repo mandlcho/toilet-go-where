@@ -317,15 +317,131 @@ git commit -m "feat: replace GitHub issue link with in-app edit suggestions"
 
 ---
 
+### Task 5: Evaluator — Write Tests
+
+**Prerequisite:** `test-setup` feature must be complete.
+
+**Files:**
+- Create: `test/components/EditSuggestion.test.tsx`
+
+- [ ] **Step 1: Create the test file**
+
+```tsx
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import EditSuggestion from '../../components/EditSuggestion';
+import * as suggestionService from '../../services/suggestionService';
+
+vi.mock('../../services/suggestionService', () => ({
+  submitSuggestion: vi.fn(),
+  ISSUE_LABELS: {
+    wrong_location: 'wrong location',
+    no_longer_exists: 'no longer exists',
+    details_incorrect: 'details are incorrect',
+    other: 'other',
+  },
+}));
+
+describe('EditSuggestion', () => {
+  beforeEach(() => {
+    vi.mocked(suggestionService.submitSuggestion).mockResolvedValue(undefined);
+  });
+
+  it('renders as a "report an issue" link initially', () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId={null} />);
+    expect(screen.getByText('report an issue')).toBeInTheDocument();
+    expect(screen.queryByText('submit')).not.toBeInTheDocument();
+  });
+
+  it('opens the form when the link is clicked', async () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId={null} />);
+    await userEvent.click(screen.getByText('report an issue'));
+    expect(screen.getByText('submit')).toBeInTheDocument();
+    expect(screen.getByText('cancel')).toBeInTheDocument();
+    expect(screen.getByText('report an issue')).toBeInTheDocument();
+  });
+
+  it('collapses back to the link on cancel', async () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId={null} />);
+    await userEvent.click(screen.getByText('report an issue'));
+    await userEvent.click(screen.getByText('cancel'));
+    expect(screen.queryByText('submit')).not.toBeInTheDocument();
+  });
+
+  it('calls submitSuggestion with correct args', async () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId="user1" />);
+    await userEvent.click(screen.getByText('report an issue'));
+    await userEvent.type(screen.getByPlaceholderText(/additional notes/), 'locked door');
+    await userEvent.click(screen.getByText('submit'));
+    expect(suggestionService.submitSuggestion).toHaveBeenCalledWith(
+      'p1',
+      'test toilet',
+      'details_incorrect',
+      'locked door',
+      'user1'
+    );
+  });
+
+  it('shows success message after successful submit', async () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId="user1" />);
+    await userEvent.click(screen.getByText('report an issue'));
+    await userEvent.click(screen.getByText('submit'));
+    await waitFor(() =>
+      expect(screen.getByText(/thanks/)).toBeInTheDocument()
+    );
+  });
+
+  it('shows error message when submit fails', async () => {
+    vi.mocked(suggestionService.submitSuggestion).mockRejectedValue(
+      new Error('network error')
+    );
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId="user1" />);
+    await userEvent.click(screen.getByText('report an issue'));
+    await userEvent.click(screen.getByText('submit'));
+    await waitFor(() =>
+      expect(screen.getByText('network error')).toBeInTheDocument()
+    );
+  });
+
+  it('passes userId=null as anonymous when not signed in', async () => {
+    render(<EditSuggestion placeId="p1" placeName="test toilet" userId={null} />);
+    await userEvent.click(screen.getByText('report an issue'));
+    await userEvent.click(screen.getByText('submit'));
+    await waitFor(() =>
+      expect(suggestionService.submitSuggestion).toHaveBeenCalledWith(
+        'p1', 'test toilet', expect.any(String), expect.any(String), null
+      )
+    );
+  });
+});
+```
+
+- [ ] **Step 2: Run the tests**
+
+```bash
+npm test -- test/components/EditSuggestion.test.tsx
+```
+
+Expected:
+```
+✓ test/components/EditSuggestion.test.tsx (7)
+Test Files  1 passed (1)
+Tests       7 passed (7)
+```
+
+If any test fails, report the exact error to the Coder.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add test/components/EditSuggestion.test.tsx
+git commit -m "test: add EditSuggestion component tests"
+```
+
+---
+
 ## Evaluator Checklist
 
-Start the dev server: `npm run dev` → open http://localhost:5173
-
-- [ ] Tap a toilet pin on the map — popup shows "report an issue" link (no GitHub link visible).
-- [ ] Tap "report an issue" in popup — form expands inline with issue type selector and notes field.
-- [ ] Select an issue type and tap "submit" — "thanks — we'll look into it." appears for ~2s, then collapses.
-- [ ] Open toilet detail sheet (tap toilet row or marker) — "report an issue" link appears below the directions/review buttons.
-- [ ] Submit from detail sheet while signed in — check Firebase Console → Firestore → `suggestions` collection → new document with correct `placeId`, `placeName`, `issueType`, `userId`.
-- [ ] Submit from popup — `userId` field in Firestore is `"anonymous"`.
-- [ ] "cancel" button collapses the form without submitting.
-- [ ] Submitting twice on the same toilet creates two separate documents.
+- [ ] `npm test -- test/components/EditSuggestion.test.tsx` — all 7 tests pass, zero failures.
+- [ ] `npm run build` — TypeScript still compiles cleanly.

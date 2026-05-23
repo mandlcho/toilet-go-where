@@ -246,15 +246,141 @@ git commit -m "feat: add condition tags with Firestore voting"
 
 ---
 
+### Task 5: Evaluator — Write Tests
+
+**Prerequisite:** `test-setup` feature must be complete.
+
+**Files:**
+- Create: `test/components/ConditionTags.test.tsx`
+
+- [ ] **Step 1: Create the test file**
+
+```tsx
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import ConditionTags from '../../components/ConditionTags';
+import * as tagService from '../../services/tagService';
+
+vi.mock('../../services/tagService', () => ({
+  getTags: vi.fn(),
+  toggleTag: vi.fn(),
+  TAG_LABELS: {
+    has_soap: 'has soap',
+    has_paper: 'has paper',
+    clean: 'clean',
+    hand_dryer: 'hand dryer',
+    broken_lock: 'broken lock',
+    out_of_order: 'out of order',
+  },
+  TAG_KEYS: ['has_soap', 'has_paper', 'clean', 'hand_dryer', 'broken_lock', 'out_of_order'],
+}));
+
+describe('ConditionTags', () => {
+  beforeEach(() => {
+    vi.mocked(tagService.getTags).mockResolvedValue([]);
+    vi.mocked(tagService.toggleTag).mockResolvedValue(undefined);
+  });
+
+  it('renders all 6 tag labels after loading', async () => {
+    render(<ConditionTags toiletId="t1" userId={null} />);
+    await waitFor(() => {
+      expect(screen.getByText('has soap')).toBeInTheDocument();
+      expect(screen.getByText('clean')).toBeInTheDocument();
+      expect(screen.getByText('broken lock')).toBeInTheDocument();
+      expect(screen.getByText('out of order')).toBeInTheDocument();
+    });
+  });
+
+  it('shows "sign in to vote" hint when userId is null', async () => {
+    render(<ConditionTags toiletId="t1" userId={null} />);
+    await waitFor(() =>
+      expect(screen.getByText(/sign in to vote/)).toBeInTheDocument()
+    );
+  });
+
+  it('hides "sign in to vote" when userId is provided', async () => {
+    render(<ConditionTags toiletId="t1" userId="user1" />);
+    await waitFor(() =>
+      expect(screen.queryByText(/sign in to vote/)).not.toBeInTheDocument()
+    );
+  });
+
+  it('shows vote count when votes exist', async () => {
+    vi.mocked(tagService.getTags).mockResolvedValue([
+      { id: 't1_has_soap', toiletId: 't1', tagKey: 'has_soap', votes: ['u1', 'u2'] },
+    ]);
+    render(<ConditionTags toiletId="t1" userId="u3" />);
+    await waitFor(() =>
+      expect(screen.getByText('has soap (2)')).toBeInTheDocument()
+    );
+  });
+
+  it('applies active (blue) styles when current user has voted', async () => {
+    vi.mocked(tagService.getTags).mockResolvedValue([
+      { id: 't1_clean', toiletId: 't1', tagKey: 'clean', votes: ['user1'] },
+    ]);
+    render(<ConditionTags toiletId="t1" userId="user1" />);
+    await waitFor(() => {
+      const btn = screen.getByText('clean (1)').closest('button');
+      expect(btn).toHaveClass('bg-blue-600');
+    });
+  });
+
+  it('calls toggleTag and increments count optimistically when user votes', async () => {
+    render(<ConditionTags toiletId="t1" userId="user1" />);
+    await waitFor(() => expect(screen.getByText('has soap')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('has soap'));
+    expect(tagService.toggleTag).toHaveBeenCalledWith('t1', 'has_soap', 'user1', false);
+    expect(screen.getByText('has soap (1)')).toBeInTheDocument();
+  });
+
+  it('does not call toggleTag when userId is null', async () => {
+    render(<ConditionTags toiletId="t1" userId={null} />);
+    await waitFor(() => expect(screen.getByText('has soap')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('has soap'));
+    expect(tagService.toggleTag).not.toHaveBeenCalled();
+  });
+
+  it('removes vote optimistically on second click', async () => {
+    vi.mocked(tagService.getTags).mockResolvedValue([
+      { id: 't1_clean', toiletId: 't1', tagKey: 'clean', votes: ['user1'] },
+    ]);
+    render(<ConditionTags toiletId="t1" userId="user1" />);
+    await waitFor(() => expect(screen.getByText('clean (1)')).toBeInTheDocument());
+    await userEvent.click(screen.getByText('clean (1)'));
+    expect(tagService.toggleTag).toHaveBeenCalledWith('t1', 'clean', 'user1', true);
+    expect(screen.getByText('clean')).toBeInTheDocument();
+    expect(screen.queryByText('clean (1)')).not.toBeInTheDocument();
+  });
+});
+```
+
+- [ ] **Step 2: Run the tests**
+
+```bash
+npm test -- test/components/ConditionTags.test.tsx
+```
+
+Expected:
+```
+✓ test/components/ConditionTags.test.tsx (8)
+Test Files  1 passed (1)
+Tests       8 passed (8)
+```
+
+If any test fails, report the exact error to the Coder.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add test/components/ConditionTags.test.tsx
+git commit -m "test: add ConditionTags component tests"
+```
+
+---
+
 ## Evaluator Checklist
 
-Start the dev server: `npm run dev` → open http://localhost:5173
-
-- [ ] Tap a toilet pin → open bottom sheet detail.
-- [ ] "condition" section appears below amenity badges, showing 6 tags: has soap, has paper, clean, hand dryer, broken lock, out of order.
-- [ ] Without signing in: tags are visible but clicking them does nothing. "sign in to vote" hint appears.
-- [ ] Sign in with Google. Tap "has soap" — it turns blue immediately (optimistic update).
-- [ ] Close and reopen the same toilet — "has soap" is still blue and shows "(1)".
-- [ ] Tap "has soap" again — vote is removed, tag returns to grey.
-- [ ] Vote counts accumulate correctly across refreshes.
-- [ ] Tags with zero votes show no count suffix. Tags with ≥1 vote show "(N)".
+- [ ] `npm test -- test/components/ConditionTags.test.tsx` — all 8 tests pass, zero failures.
+- [ ] `npm run build` — TypeScript still compiles cleanly.

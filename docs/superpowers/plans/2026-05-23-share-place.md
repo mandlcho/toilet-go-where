@@ -168,13 +168,114 @@ git commit -m "feat: add share-a-place deep linking via URL params"
 
 ---
 
+### Task 3: Evaluator — Write Tests
+
+**Prerequisite:** `test-setup` feature must be complete.
+
+**Files:**
+- Create: `test/utils/share.test.ts`
+
+- [ ] **Step 1: Create the test file**
+
+```ts
+import { describe, it, expect, afterEach } from 'vitest';
+import { encodeShareUrl, decodeShareParams, clearShareParams } from '../../utils/share';
+
+afterEach(() => {
+  window.history.replaceState({}, '', '/');
+});
+
+describe('encodeShareUrl', () => {
+  it('includes id, lat, lng as query params', () => {
+    const result = encodeShareUrl({ id: 'toilet-42', lat: 1.234567, lng: 103.987654 });
+    const url = new URL(result);
+    expect(url.searchParams.get('id')).toBe('toilet-42');
+    expect(url.searchParams.get('lat')).toBe('1.234567');
+    expect(url.searchParams.get('lng')).toBe('103.987654');
+  });
+
+  it('formats lat/lng to 6 decimal places', () => {
+    const result = encodeShareUrl({ id: 'x', lat: 1.3, lng: 103.8 });
+    const url = new URL(result);
+    expect(url.searchParams.get('lat')).toBe('1.300000');
+    expect(url.searchParams.get('lng')).toBe('103.800000');
+  });
+});
+
+describe('decodeShareParams', () => {
+  it('returns null when URL has no params', () => {
+    expect(decodeShareParams()).toBeNull();
+  });
+
+  it('returns null when id is missing', () => {
+    window.history.pushState({}, '', '?lat=1.3&lng=103.8');
+    expect(decodeShareParams()).toBeNull();
+  });
+
+  it('returns null when lat is not a number', () => {
+    window.history.pushState({}, '', '?id=t1&lat=abc&lng=103.8');
+    expect(decodeShareParams()).toBeNull();
+  });
+
+  it('returns null when lng is not a number', () => {
+    window.history.pushState({}, '', '?id=t1&lat=1.3&lng=xyz');
+    expect(decodeShareParams()).toBeNull();
+  });
+
+  it('parses valid params into a ShareParams object', () => {
+    window.history.pushState({}, '', '?id=toilet-42&lat=1.234567&lng=103.987654');
+    expect(decodeShareParams()).toEqual({
+      id: 'toilet-42',
+      lat: 1.234567,
+      lng: 103.987654,
+    });
+  });
+});
+
+describe('clearShareParams', () => {
+  it('removes id, lat, lng from the URL', () => {
+    window.history.pushState({}, '', '?id=t1&lat=1.3&lng=103.8');
+    clearShareParams();
+    const p = new URLSearchParams(window.location.search);
+    expect(p.get('id')).toBeNull();
+    expect(p.get('lat')).toBeNull();
+    expect(p.get('lng')).toBeNull();
+  });
+
+  it('preserves unrelated params', () => {
+    window.history.pushState({}, '', '?id=t1&lat=1.3&lng=103.8&other=keep');
+    clearShareParams();
+    const p = new URLSearchParams(window.location.search);
+    expect(p.get('other')).toBe('keep');
+  });
+});
+```
+
+- [ ] **Step 2: Run the tests**
+
+```bash
+npm test -- test/utils/share.test.ts
+```
+
+Expected:
+```
+✓ test/utils/share.test.ts (9)
+Test Files  1 passed (1)
+Tests       9 passed (9)
+```
+
+If any test fails, report the exact error to the Coder.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add test/utils/share.test.ts
+git commit -m "test: add share util unit tests"
+```
+
+---
+
 ## Evaluator Checklist
 
-Start the dev server: `npm run dev` → open http://localhost:5173
-
-- [ ] Search for toilets, tap one — the browser URL bar updates to include `?id=...&lat=...&lng=...`.
-- [ ] Close the detail sheet (swipe down or tap backdrop) — URL params are removed from the address bar.
-- [ ] Tap a different toilet — URL updates to that toilet's params.
-- [ ] Copy the URL while a toilet is selected. Open it in a new tab — the map centers on that location, searches, and auto-opens the correct toilet's detail sheet.
-- [ ] Open a URL with a valid `?id=` but the toilet is not in results (e.g. id was for a different area) — app searches, finds nothing matching, but doesn't crash.
-- [ ] Open the app with no URL params — behaves exactly as before (no regression).
+- [ ] `npm test -- test/utils/share.test.ts` — all 9 tests pass, zero failures.
+- [ ] `npm run build` — TypeScript still compiles cleanly.

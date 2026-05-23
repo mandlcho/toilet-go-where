@@ -29,10 +29,12 @@ Each feature has a pointer to its plan file in `plans/`.
 - Does NOT touch other features or refactor unrelated code
 
 **Evaluator**
-- Runs `npm run build` — zero TypeScript errors required
-- Starts `npm run dev` and verifies each item in the plan's "Evaluator Checklist"
-- If anything fails, writes a short failure report and hands back to Coder
-- If all checks pass, marks the feature `done` in `feature-queue.json` and commits
+- Reads the plan's final "Evaluator Task" section
+- Writes the test file(s) specified in that section (complete code is provided)
+- Runs `npm test -- <test-file>` — all tests must pass, zero failures
+- Also runs `npm run build` — zero TypeScript errors
+- If any test fails, hands the exact failure output back to the Coder
+- If all pass, marks the feature `done` in `feature-queue.json` and commits
 
 ### Running the Loop
 
@@ -46,6 +48,7 @@ The orchestrator will pick the first `pending` item from the queue and begin.
 
 | # | Feature          | Status  | Plan |
 |---|-----------------|---------|------|
+| 0 | Test Setup       | pending | [plan](plans/2026-05-23-test-setup.md) |
 | 2 | List View        | pending | [plan](plans/2026-05-23-list-view.md) |
 | 5 | Condition Tags   | pending | [plan](plans/2026-05-23-condition-tags.md) |
 | 6 | Photo Uploads    | pending | [plan](plans/2026-05-23-photo-uploads.md) |

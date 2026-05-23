@@ -290,15 +290,144 @@ git commit -m "feat: add photo uploads via Firebase Storage"
 
 ---
 
+### Task 6: Evaluator — Write Tests
+
+**Prerequisite:** `test-setup` feature must be complete.
+
+**Files:**
+- Create: `test/components/PhotoGallery.test.tsx`
+
+- [ ] **Step 1: Create the test file**
+
+```tsx
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import PhotoGallery from '../../components/PhotoGallery';
+import * as photoService from '../../services/photoService';
+import type { Photo } from '../../types';
+
+vi.mock('../../services/photoService', () => ({
+  getPhotos: vi.fn(),
+  uploadPhoto: vi.fn(),
+}));
+
+const makePhoto = (id: string, url: string): Photo => ({
+  id,
+  toiletId: 't1',
+  url,
+  userId: 'u1',
+  userName: 'Alice',
+  createdAt: 1000,
+});
+
+describe('PhotoGallery', () => {
+  beforeEach(() => {
+    vi.mocked(photoService.getPhotos).mockResolvedValue([]);
+    vi.mocked(photoService.uploadPhoto).mockResolvedValue(makePhoto('ph1', 'https://example.com/a.jpg'));
+  });
+
+  it('shows "no photos yet." when empty and not signed in', async () => {
+    render(<PhotoGallery toiletId="t1" userId={null} userName={null} />);
+    await waitFor(() =>
+      expect(screen.getByText('no photos yet.')).toBeInTheDocument()
+    );
+  });
+
+  it('shows "be the first!" when signed in with no photos', async () => {
+    render(<PhotoGallery toiletId="t1" userId="u1" userName="Alice" />);
+    await waitFor(() =>
+      expect(screen.getByText(/be the first!/)).toBeInTheDocument()
+    );
+  });
+
+  it('hides the upload button when not signed in', async () => {
+    render(<PhotoGallery toiletId="t1" userId={null} userName={null} />);
+    await waitFor(() =>
+      expect(screen.queryByText('+ add photo')).not.toBeInTheDocument()
+    );
+  });
+
+  it('shows the upload button when signed in', async () => {
+    render(<PhotoGallery toiletId="t1" userId="u1" userName="Alice" />);
+    await waitFor(() =>
+      expect(screen.getByText('+ add photo')).toBeInTheDocument()
+    );
+  });
+
+  it('renders a thumbnail for each photo', async () => {
+    vi.mocked(photoService.getPhotos).mockResolvedValue([
+      makePhoto('ph1', 'https://example.com/a.jpg'),
+      makePhoto('ph2', 'https://example.com/b.jpg'),
+    ]);
+    render(<PhotoGallery toiletId="t1" userId="u1" userName="Alice" />);
+    await waitFor(() => {
+      const imgs = screen.getAllByAltText('toilet photo');
+      expect(imgs).toHaveLength(2);
+      expect(imgs[0]).toHaveAttribute('src', 'https://example.com/a.jpg');
+    });
+  });
+
+  it('calls uploadPhoto and prepends the new photo', async () => {
+    const newPhoto = makePhoto('ph3', 'https://example.com/c.jpg');
+    vi.mocked(photoService.uploadPhoto).mockResolvedValue(newPhoto);
+    render(<PhotoGallery toiletId="t1" userId="u1" userName="Alice" />);
+    await waitFor(() => expect(screen.getByText('+ add photo')).toBeInTheDocument());
+
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, file);
+
+    expect(photoService.uploadPhoto).toHaveBeenCalledWith('t1', 'u1', 'Alice', file);
+    await waitFor(() => {
+      expect(screen.getByAltText('toilet photo')).toHaveAttribute(
+        'src',
+        'https://example.com/c.jpg'
+      );
+    });
+  });
+
+  it('shows an error message when upload fails', async () => {
+    vi.mocked(photoService.uploadPhoto).mockRejectedValue(new Error('storage unavailable'));
+    render(<PhotoGallery toiletId="t1" userId="u1" userName="Alice" />);
+    await waitFor(() => expect(screen.getByText('+ add photo')).toBeInTheDocument());
+
+    const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(input, file);
+
+    await waitFor(() =>
+      expect(screen.getByText('storage unavailable')).toBeInTheDocument()
+    );
+  });
+});
+```
+
+- [ ] **Step 2: Run the tests**
+
+```bash
+npm test -- test/components/PhotoGallery.test.tsx
+```
+
+Expected:
+```
+✓ test/components/PhotoGallery.test.tsx (7)
+Test Files  1 passed (1)
+Tests       7 passed (7)
+```
+
+If any test fails, report the exact error to the Coder.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add test/components/PhotoGallery.test.tsx
+git commit -m "test: add PhotoGallery component tests"
+```
+
+---
+
 ## Evaluator Checklist
 
-Start the dev server: `npm run dev` → open http://localhost:5173
-
-- [ ] Tap a toilet — "photos" section appears in the detail sheet above "reviews".
-- [ ] Without signing in: "no photos yet." shown, no upload button visible.
-- [ ] Sign in with Google. "+ add photo" button appears.
-- [ ] Tap "+ add photo" on mobile — device camera launches (capture="environment"). On desktop — file picker opens.
-- [ ] Select/take a photo — "uploading..." appears, then the photo thumbnail appears in the gallery.
-- [ ] Close and reopen the toilet — uploaded photo persists (loaded from Firestore/Storage).
-- [ ] Multiple photos scroll horizontally.
-- [ ] Upload error (e.g. no Storage config) shows inline error text, doesn't crash the page.
+- [ ] `npm test -- test/components/PhotoGallery.test.tsx` — all 7 tests pass, zero failures.
+- [ ] `npm run build` — TypeScript still compiles cleanly.
