@@ -47,6 +47,7 @@ const App: React.FC = () => {
   const [toast, setToast] = useState<{message: string, type: 'error'|'info'|'success'} | null>(null);
   const [showSearchHere, setShowSearchHere] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const lastSearchCenter = useRef<Location | null>(null);
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -290,6 +291,7 @@ const App: React.FC = () => {
         zoom={mapZoom}
         onViewportChanged={handleViewportChanged}
         onToiletSelect={setSelectedToilet}
+        highlightedId={highlightedId}
       />
 
       {/* Re-center button */}
@@ -443,6 +445,7 @@ const App: React.FC = () => {
           userLocation={location}
           onSelect={setSelectedToilet}
           onClose={() => setShowList(false)}
+          onHighlight={setHighlightedId}
         />
       )}
 
