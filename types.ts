@@ -49,3 +49,10 @@ export interface ConditionTag {
   tagKey: string;
   votes: string[];  // array of userIds who voted
 }
+
+export interface Favorite {
+  id: string;        // Firestore doc ID: `${userId}_${placeId}`
+  userId: string;
+  place: Place;
+  createdAt: number;
+}
