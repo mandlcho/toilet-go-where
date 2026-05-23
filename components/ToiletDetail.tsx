@@ -8,6 +8,7 @@ import StarRating from './StarRating';
 import ConditionTags from './ConditionTags';
 import FavoriteButton from './FavoriteButton';
 import PhotoGallery from './PhotoGallery';
+import EditSuggestion from './EditSuggestion';
 
 interface ToiletDetailProps {
   toilet: Toilet;
@@ -194,6 +195,12 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
           write a review
         </button>
       </div>
+
+      <EditSuggestion
+        placeId={toilet.id}
+        placeName={toilet.name}
+        userId={user?.uid ?? null}
+      />
 
       {/* Auth bar */}
       {user && (
