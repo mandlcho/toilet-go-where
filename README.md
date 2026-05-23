@@ -48,7 +48,7 @@ npm install
 npm run dev
 ```
 
-Opens http://localhost:3000 with hot reload.
+Opens http://localhost:5173 with hot reload.
 
 ### Build & Deploy
 
@@ -68,7 +68,6 @@ To deploy to GitHub Pages:
 ## Future Roadmap
 
 - [ ] **Planned Toilet Visits**: Save and plan trips to verified restrooms
-- [ ] **Community Reviews**: Allow users to rate toilets by cleanliness, wait time, amenities
 - [ ] **Offline Mode**: Cache nearby toilet data for offline access
 - [ ] **Real-time Updates**: Show occupancy status / average wait times (via OpenStreetMap community)
 - [ ] **Smart Suggestions**: ML model trained on visit patterns to suggest best toilets

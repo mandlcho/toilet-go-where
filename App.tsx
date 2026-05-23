@@ -130,20 +130,9 @@ const App: React.FC = () => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                         (window.navigator as any).standalone === true;
     
-    console.log('[Install Prompt Debug]', {
-      userAgent: navigator.userAgent,
-      isMobile,
-      isStandalone,
-      displayMode: window.matchMedia('(display-mode: standalone)').matches,
-      navigatorStandalone: (window.navigator as any).standalone,
-      willShowPrompt: isMobile && !isStandalone
-    });
-    
     // Only show prompt if on mobile and not already installed
     if (isMobile && !isStandalone) {
-      // Show after a short delay to avoid overwhelming the user
       const timer = setTimeout(() => {
-        console.log('[Install Prompt] Showing prompt now');
         setShowInstallPrompt(true);
       }, 2000);
       
