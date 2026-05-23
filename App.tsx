@@ -6,7 +6,7 @@ import MapView from './components/MapView';
 import BottomSheet from './components/BottomSheet';
 import ToiletDetail from './components/ToiletDetail';
 import Toast from './components/Toast';
-import PlaceList from './components/PlaceList';
+import PlaceList, { LIST_PEEK_HEIGHT } from './components/PlaceList';
 import type { Location, Toilet, ReviewUser } from './types';
 import { haversineDistance } from './utils/distance';
 
@@ -201,6 +201,7 @@ const App: React.FC = () => {
       setHasSearched(true);
       lastSearchCenter.current = searchLocation;
       setShowSearchHere(false);
+      setShowList(true);
       if (foundToilets.length === 0) {
         setToast({ message: "no toilets found in this area.", type: 'info' });
       }
@@ -229,6 +230,8 @@ const App: React.FC = () => {
       setShowSearchHere(false);
       if (foundAtms.length === 0) {
         setToast({ message: "no atms found in this area.", type: 'info' });
+      } else {
+        setShowList(true);
       }
     } catch (error: any) {
       console.error(error);
@@ -350,7 +353,10 @@ const App: React.FC = () => {
         </div>
       )}
       
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md text-center z-10">
+      <div
+        className="absolute left-1/2 -translate-x-1/2 w-[90%] max-w-md text-center z-10"
+        style={{ bottom: showList ? `${LIST_PEEK_HEIGHT + 16}px` : '16px', transition: 'bottom 0.3s ease-out' }}
+      >
         {/* Category toggle */}
         <div className="flex items-center justify-center gap-1 mb-2">
           <button
@@ -366,14 +372,6 @@ const App: React.FC = () => {
             className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${activeCategory === 'atm' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'} disabled:opacity-50`}
           >
             atms
-          </button>
-          <button
-            onClick={() => setShowList(true)}
-            disabled={!hasSearched || isFinding}
-            className="px-4 py-1.5 text-xs font-bold rounded-full transition-colors bg-white text-gray-600 border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-            title="list view"
-          >
-            list
           </button>
         </div>
 

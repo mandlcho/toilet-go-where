@@ -46,13 +46,13 @@ describe('PlaceList', () => {
     expect(screen.getByText(/no results/)).toBeInTheDocument();
   });
 
-  it('calls onSelect with the place and onClose when a row is tapped', async () => {
+  it('calls onSelect with the place but not onClose when a row is tapped', async () => {
     const onSelect = vi.fn();
     const onClose = vi.fn();
     render(<PlaceList places={mockPlaces} userLocation={null} onSelect={onSelect} onClose={onClose} />);
     await userEvent.click(screen.getByText('test toilet'));
     expect(onSelect).toHaveBeenCalledWith(mockPlaces[0]);
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('calls onClose when ✕ button is clicked', async () => {
