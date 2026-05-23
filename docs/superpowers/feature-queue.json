@@ -1,0 +1,60 @@
+{
+  "features": [
+    {
+      "id": "test-setup",
+      "title": "Test Infrastructure",
+      "description": "Install vitest + @testing-library/react. Must be done before any other feature.",
+      "status": "done",
+      "plan": "plans/2026-05-23-test-setup.md"
+    },
+    {
+      "id": "list-view",
+      "title": "List View",
+      "description": "Scrollable list of results alongside the map, sorted by distance",
+      "status": "done",
+      "plan": "plans/2026-05-23-list-view.md"
+    },
+    {
+      "id": "condition-tags",
+      "title": "Condition Tags",
+      "description": "Quick-tap user-voted tags: has soap, has paper, clean, broken lock, etc.",
+      "status": "pending",
+      "plan": "plans/2026-05-23-condition-tags.md"
+    },
+    {
+      "id": "photo-uploads",
+      "title": "Photo Uploads",
+      "description": "Users upload photos via Firebase Storage; shown in horizontal gallery",
+      "status": "pending",
+      "plan": "plans/2026-05-23-photo-uploads.md"
+    },
+    {
+      "id": "edit-suggestions",
+      "title": "Edit Suggestions",
+      "description": "In-app form to report incorrect OSM data (replaces GitHub issue link)",
+      "status": "pending",
+      "plan": "plans/2026-05-23-edit-suggestions.md"
+    },
+    {
+      "id": "walk-time",
+      "title": "Estimated Walk Time",
+      "description": "Already implemented — formatDistance() in utils/distance.ts returns 'X km away · Y min walk'",
+      "status": "done",
+      "plan": null
+    },
+    {
+      "id": "share-place",
+      "title": "Share a Place",
+      "description": "Deep link to a specific toilet via URL params (?lat=...&lng=...&id=...)",
+      "status": "pending",
+      "plan": "plans/2026-05-23-share-place.md"
+    },
+    {
+      "id": "favorites",
+      "title": "Favorites",
+      "description": "Bookmark places to a personal list, persisted to Firestore",
+      "status": "pending",
+      "plan": "plans/2026-05-23-favorites.md"
+    }
+  ]
+}
