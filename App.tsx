@@ -9,6 +9,7 @@ import Toast from './components/Toast';
 import PlaceList, { LIST_PEEK_HEIGHT } from './components/PlaceList';
 import type { Location, Toilet, ReviewUser } from './types';
 import { haversineDistance } from './utils/distance';
+import { encodeShareUrl, decodeShareParams, clearShareParams } from './utils/share';
 
 const DEFAULT_CENTER: Location = { lat: 1.3521, lng: 103.8198 }; // Default to Singapore
 const DEFAULT_ZOOM = 12;
@@ -167,6 +168,34 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const params = decodeShareParams();
+    if (!params) return;
+    const { id, lat, lng } = params;
+    setMapCenter({ lat, lng });
+    setMapZoom(17);
+    (async () => {
+      try {
+        const results = await findToilets({ lat, lng });
+        setToilets(results);
+        setActiveCategory('toilet');
+        setHasSearched(true);
+        lastSearchCenter.current = { lat, lng };
+        const match = results.find((t) => t.id === id);
+        if (match) {
+          setSelectedToilet(match);
+          window.history.replaceState(
+            {},
+            '',
+            encodeShareUrl({ id: match.id, lat: match.location.lat, lng: match.location.lng })
+          );
+        }
+      } catch {
+        // silently fail — user can search manually
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     if (activeCategory === 'atm') {
       setFilteredToilets(toilets);
       return;
@@ -272,6 +301,15 @@ const App: React.FC = () => {
     }
   };
 
+  const handleToiletSelect = (toilet: Toilet) => {
+    setSelectedToilet(toilet);
+    window.history.pushState(
+      {},
+      '',
+      encodeShareUrl({ id: toilet.id, lat: toilet.location.lat, lng: toilet.location.lng })
+    );
+  };
+
   const filterButtonClass = "w-28 px-4 py-2 text-xs font-bold text-gray-800 bg-white border border-gray-300 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm flex items-center justify-center space-x-1.5";
   const activeFilterClass = "bg-blue-600 text-white border-blue-600";
 
@@ -290,7 +328,7 @@ const App: React.FC = () => {
         center={mapCenter}
         zoom={mapZoom}
         onViewportChanged={handleViewportChanged}
-        onToiletSelect={setSelectedToilet}
+        onToiletSelect={handleToiletSelect}
         highlightedId={highlightedId}
       />
 
@@ -449,7 +487,10 @@ const App: React.FC = () => {
         />
       )}
 
-      <BottomSheet isOpen={selectedToilet !== null} onClose={() => setSelectedToilet(null)}>
+      <BottomSheet
+        isOpen={selectedToilet !== null}
+        onClose={() => { setSelectedToilet(null); clearShareParams(); }}
+      >
         {selectedToilet && (
           <ToiletDetail
             toilet={selectedToilet}
