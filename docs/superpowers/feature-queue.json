@@ -46,14 +46,14 @@
       "id": "share-place",
       "title": "Share a Place",
       "description": "Deep link to a specific toilet via URL params (?lat=...&lng=...&id=...)",
-      "status": "pending",
+      "status": "done",
       "plan": "plans/2026-05-23-share-place.md"
     },
     {
       "id": "favorites",
       "title": "Favorites",
       "description": "Bookmark places to a personal list, persisted to Firestore",
-      "status": "pending",
+      "status": "done",
       "plan": "plans/2026-05-23-favorites.md"
     }
   ]
