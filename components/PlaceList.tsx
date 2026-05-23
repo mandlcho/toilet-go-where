@@ -11,9 +11,10 @@ interface PlaceListProps {
   onSelect: (place: Toilet) => void;
   onClose: () => void;
   onHighlight?: (id: string | null) => void;
+  onFocus?: (place: Toilet) => void;
 }
 
-const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, onClose, onHighlight }) => {
+const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, onClose, onHighlight, onFocus }) => {
   const [translateY, setTranslateY] = useState(0);
   const [isFullHeight, setIsFullHeight] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -119,7 +120,7 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
             return (
               <button
                 key={place.id}
-                onMouseEnter={() => { setTappedId(place.id); onHighlight?.(place.id); }}
+                onMouseEnter={() => { setTappedId(place.id); onHighlight?.(place.id); onFocus?.(place); }}
                 onMouseLeave={() => { setTappedId(null); onHighlight?.(null); }}
                 onClick={() => {
                   if (isActive) {
@@ -129,6 +130,7 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
                   } else {
                     setTappedId(place.id);
                     onHighlight?.(place.id);
+                    onFocus?.(place);
                   }
                 }}
                 className={`w-full text-left px-5 py-3 border-b border-gray-50 transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50 active:bg-gray-100'}`}
