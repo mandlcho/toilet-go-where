@@ -7,6 +7,7 @@ import { formatDistance } from '../utils/distance';
 import StarRating from './StarRating';
 import ConditionTags from './ConditionTags';
 import FavoriteButton from './FavoriteButton';
+import PhotoGallery from './PhotoGallery';
 
 interface ToiletDetailProps {
   toilet: Toilet;
@@ -236,6 +237,13 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
           </div>
         </div>
       )}
+
+      {/* Photos */}
+      <PhotoGallery
+        toiletId={toilet.id}
+        userId={user?.uid ?? null}
+        userName={user?.displayName ?? null}
+      />
 
       {/* Reviews list */}
       <div>

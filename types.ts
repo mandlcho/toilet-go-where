@@ -56,3 +56,12 @@ export interface Favorite {
   place: Place;
   createdAt: number;
 }
+
+export interface Photo {
+  id: string;
+  toiletId: string;
+  url: string;
+  userId: string;
+  userName: string;
+  createdAt: number;
+}
