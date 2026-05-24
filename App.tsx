@@ -37,6 +37,10 @@ const App: React.FC = () => {
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [mapCenter, setMapCenter] = useState<Location>(DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState<number>(DEFAULT_ZOOM);
+  // Tracks the live visible map position without triggering re-renders.
+  // Only mapCenter/mapZoom state (programmatic intent) feeds back into ChangeView.
+  const mapViewCenter = useRef<Location>(DEFAULT_CENTER);
+  const mapViewZoom = useRef<number>(DEFAULT_ZOOM);
   const [showInstallPrompt, setShowInstallPrompt] = useState<boolean>(false);
   const [filters, setFilters] = useState<FilterState>({
     free: false,
@@ -244,8 +248,7 @@ const App: React.FC = () => {
   };
 
   const handleFindIts = async () => {
-    // Allow usage even when geolocation is denied by searching around the current map center.
-    const searchLocation = location ?? mapCenter;
+    const searchLocation = location ?? mapViewCenter.current;
     return handleFindItsAt(searchLocation);
   };
 
@@ -272,7 +275,7 @@ const App: React.FC = () => {
   };
 
   const handleFindAtms = async () => {
-    const searchLocation = location ?? mapCenter;
+    const searchLocation = location ?? mapViewCenter.current;
     return handleFindAtmsAt(searchLocation);
   };
   
@@ -280,9 +283,12 @@ const App: React.FC = () => {
     setFilters(prev => ({ ...prev, [filterName]: !prev[filterName] }));
   };
 
+  const resetFilters = () => setFilters({ free: false, wheelchair: false, diaper: false });
+
   const handleViewportChanged = (center: Location, zoom: number) => {
-    setMapCenter(center);
-    setMapZoom(zoom);
+    // Update refs only — no state update means no re-render → breaks the ChangeView loop.
+    mapViewCenter.current = center;
+    mapViewZoom.current = zoom;
     if (hasSearched && lastSearchCenter.current) {
       const dist = haversineDistance(lastSearchCenter.current, center);
       setShowSearchHere(dist > 500);
@@ -303,6 +309,7 @@ const App: React.FC = () => {
 
   const handleToiletSelect = (toilet: Toilet) => {
     setSelectedToilet(toilet);
+    setHighlightedId(toilet.id);
     window.history.pushState(
       {},
       '',
@@ -354,8 +361,8 @@ const App: React.FC = () => {
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-slide-down">
           <button
             onClick={() => {
-              if (activeCategory === 'atm') handleFindAtmsAt(mapCenter);
-              else handleFindItsAt(mapCenter);
+              if (activeCategory === 'atm') handleFindAtmsAt(mapViewCenter.current);
+              else handleFindItsAt(mapViewCenter.current);
             }}
             className="px-4 py-2 text-sm font-semibold text-white bg-gray-800 rounded-full shadow-lg hover:bg-gray-700 transition-colors"
           >
@@ -400,14 +407,14 @@ const App: React.FC = () => {
         {/* Category toggle */}
         <div className="flex items-center justify-center gap-1 mb-2">
           <button
-            onClick={() => { setActiveCategory('toilet'); if (!hasSearched || activeCategory !== 'toilet') handleFindIts(); }}
+            onClick={() => { resetFilters(); setActiveCategory('toilet'); if (!hasSearched || activeCategory !== 'toilet') handleFindIts(); }}
             disabled={isFinding}
             className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${activeCategory === 'toilet' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'} disabled:opacity-50`}
           >
             toilets
           </button>
           <button
-            onClick={() => { if (activeCategory !== 'atm') { const loc = location ?? mapCenter; handleFindAtmsAt(loc); } }}
+            onClick={() => { if (activeCategory !== 'atm') { resetFilters(); handleFindAtmsAt(location ?? mapViewCenter.current); } }}
             disabled={isFinding}
             className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${activeCategory === 'atm' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-100'} disabled:opacity-50`}
           >
@@ -437,6 +444,16 @@ const App: React.FC = () => {
             </button>
 
           </div>
+        )}
+
+        {/* Empty filter state */}
+        {hasSearched && !isFinding && filteredToilets.length === 0 && (filters.free || filters.wheelchair || filters.diaper) && (
+          <p className="mt-2 text-xs text-gray-600 bg-white/90 rounded-lg px-3 py-2 shadow-sm">
+            no results match your filters.{' '}
+            <button onClick={resetFilters} className="underline font-semibold text-blue-600 hover:text-blue-800">
+              clear filters
+            </button>
+          </p>
         )}
 
         {/* Onboarding hint for first-time users */}
@@ -490,7 +507,7 @@ const App: React.FC = () => {
 
       <BottomSheet
         isOpen={selectedToilet !== null}
-        onClose={() => { setSelectedToilet(null); clearShareParams(); }}
+        onClose={() => { setSelectedToilet(null); setHighlightedId(null); clearShareParams(); }}
       >
         {selectedToilet && (
           <>
