@@ -511,7 +511,10 @@ const App: React.FC = () => {
       </div>
 
       {showInstallPrompt && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 max-w-sm w-[90%] z-50 animate-slide-down">
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 max-w-sm w-[90%] z-50 animate-prompt-fade"
+          onAnimationEnd={() => setShowInstallPrompt(false)}
+        >
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 p-4">
             <div className="flex items-start gap-3">
               <div className="text-2xl flex-shrink-0">📱</div>

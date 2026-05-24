@@ -27,3 +27,14 @@ body {
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }
+
+@keyframes prompt-fade {
+  0%   { opacity: 0; transform: translateY(-12px); }
+  10%  { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.animate-prompt-fade {
+  animation: prompt-fade 5s ease-in-out forwards;
+}
