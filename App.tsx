@@ -552,17 +552,11 @@ const App: React.FC = () => {
       <BottomSheet
         isOpen={selectedToilet !== null}
         onClose={() => { setSelectedToilet(null); setHighlightedId(null); clearShareParams(); }}
+        onBack={filteredToilets.length > 0 ? () => { setSelectedToilet(null); setHighlightedId(null); setShowList(true); clearShareParams(); } : undefined}
+        backLabel="results"
       >
         {selectedToilet && (
           <>
-            {showList && (
-              <button
-                onClick={() => { setSelectedToilet(null); clearShareParams(); }}
-                className="flex items-center gap-1 text-xs font-semibold text-blue-600 mb-3 -mt-1 hover:text-blue-800"
-              >
-                ← results
-              </button>
-            )}
             <ToiletDetail
               toilet={selectedToilet}
               user={currentUser}

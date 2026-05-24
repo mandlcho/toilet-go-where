@@ -3,13 +3,15 @@ import React, { useEffect, useRef, useState } from 'react';
 interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   children: React.ReactNode;
 }
 
 const PEEK_HEIGHT = 320;
 const SNAP_THRESHOLD = 80;
 
-const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, children }) => {
+const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, onBack, backLabel = 'results', children }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [translateY, setTranslateY] = useState(0);
   const [isFullHeight, setIsFullHeight] = useState(false);
@@ -95,7 +97,21 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, children }) 
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
         >
-          <div className="flex-1" />
+          <div className="flex-1 flex justify-start">
+            {onBack && (
+              <button
+                onClick={onBack}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                aria-label={`back to ${backLabel}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                {backLabel}
+              </button>
+            )}
+          </div>
           <div className="w-10 h-1 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing" />
           <div className="flex-1 flex justify-end">
             <button
