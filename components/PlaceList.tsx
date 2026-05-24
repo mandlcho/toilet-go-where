@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Toilet, Location } from '../types';
 import { formatDistance } from '../utils/distance';
 
@@ -20,6 +20,7 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
   const [isDragging, setIsDragging] = useState(false);
   const [tappedId, setTappedId] = useState<string | null>(null);
   const dragStart = useRef<{ y: number; translate: number } | null>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (clientY: number) => {
     dragStart.current = { y: clientY, translate: translateY };
@@ -49,8 +50,19 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
   };
 
   const handleTouchStart = (e: React.TouchEvent) => handleDragStart(e.touches[0].clientY);
-  const handleTouchMove = (e: React.TouchEvent) => handleDragMove(e.touches[0].clientY);
   const handleTouchEnd = () => handleDragEnd();
+
+  // Register touchmove as non-passive so preventDefault() can block pull-to-refresh.
+  useEffect(() => {
+    const el = handleRef.current;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      handleDragMove(e.touches[0].clientY);
+    };
+    el.addEventListener('touchmove', onMove, { passive: false });
+    return () => el.removeEventListener('touchmove', onMove);
+  });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     handleDragStart(e.clientY);
@@ -79,9 +91,9 @@ const PlaceList: React.FC<PlaceListProps> = ({ places, userLocation, onSelect, o
     >
       {/* Drag handle */}
       <div
+        ref={handleRef}
         className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
       >

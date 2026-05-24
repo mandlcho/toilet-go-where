@@ -449,7 +449,7 @@ const App: React.FC = () => {
       
       <div
         className="absolute left-1/2 -translate-x-1/2 w-[90%] max-w-md text-center z-10"
-        style={{ bottom: showList ? `${LIST_PEEK_HEIGHT + 16}px` : '16px', transition: 'bottom 0.3s ease-out' }}
+        style={{ bottom: '16px' }}
       >
         {/* Category toggle */}
         <div className="flex items-center justify-center gap-1 mb-2">
