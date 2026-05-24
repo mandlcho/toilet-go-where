@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { reverseGeocode, findToilets } from './services/locationService';
 import { findAtms } from './services/osmService';
 import { onAuthChanged } from './services/authService';
@@ -57,6 +58,7 @@ const App: React.FC = () => {
   const lastSearchCenter = useRef<Location | null>(null);
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recenterCountdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const leafletMap = useRef<L.Map | null>(null);
 
 
   useEffect(() => {
@@ -277,6 +279,13 @@ const App: React.FC = () => {
 
   const resetFilters = () => setFilters({ free: false, wheelchair: false, diaper: false });
 
+  useEffect(() => {
+    if (!leafletMap.current) return;
+    // Shift the visible centre up/down to keep it above the bottom sheet.
+    // BottomSheet PEEK_HEIGHT = 320 px → pan by half (160 px).
+    leafletMap.current.panBy([0, selectedToilet ? -160 : 160], { animate: true, duration: 0.25 });
+  }, [selectedToilet !== null]);
+
   const cancelRecenter = () => {
     if (recenterTimer.current) clearTimeout(recenterTimer.current);
     if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
@@ -355,6 +364,7 @@ const App: React.FC = () => {
         onViewportChanged={handleViewportChanged}
         onToiletSelect={handleToiletSelect}
         highlightedId={highlightedId}
+        onMapReady={(m) => { leafletMap.current = m; }}
       />
 
       {/* Re-center button */}
