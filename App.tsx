@@ -165,14 +165,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const params = decodeShareParams();
     if (!params) return;
-    const { id, lat, lng } = params;
+    const { id, lat, lng, category } = params;
     setMapCenter({ lat, lng });
     setMapZoom(17);
     (async () => {
       try {
-        const results = await findToilets({ lat, lng });
+        const isAtm = category === 'atm';
+        const results = isAtm ? await findAtms({ lat, lng }) : await findToilets({ lat, lng });
         setToilets(results);
-        setActiveCategory('toilet');
+        setActiveCategory(isAtm ? 'atm' : 'toilet');
         setHasSearched(true);
         lastSearchCenter.current = { lat, lng };
         const match = results.find((t) => t.id === id);
@@ -181,7 +182,7 @@ const App: React.FC = () => {
           window.history.replaceState(
             {},
             '',
-            encodeShareUrl({ id: match.id, lat: match.location.lat, lng: match.location.lng })
+            encodeShareUrl({ id: match.id, lat: match.location.lat, lng: match.location.lng, category })
           );
         }
       } catch {
@@ -325,7 +326,12 @@ const App: React.FC = () => {
     window.history.pushState(
       {},
       '',
-      encodeShareUrl({ id: toilet.id, lat: toilet.location.lat, lng: toilet.location.lng })
+      encodeShareUrl({
+        id: toilet.id,
+        lat: toilet.location.lat,
+        lng: toilet.location.lng,
+        category: toilet.category === 'atm' ? 'atm' : 'toilet',
+      })
     );
   };
 
