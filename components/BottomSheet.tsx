@@ -89,13 +89,26 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, children }) 
         }}
       >
         <div
-          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          className="flex items-center justify-between px-4 pt-3 pb-2"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
         >
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="flex-1" />
+          <div className="w-10 h-1 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing" />
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onClose}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              aria-label="close"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div
           className="overflow-y-auto px-5 pb-8"
