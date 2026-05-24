@@ -53,8 +53,10 @@ const App: React.FC = () => {
   const [showSearchHere, setShowSearchHere] = useState(false);
   const [showList, setShowList] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [recenterCountdown, setRecenterCountdown] = useState<number | null>(null);
   const lastSearchCenter = useRef<Location | null>(null);
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recenterCountdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
   useEffect(() => {
@@ -274,6 +276,12 @@ const App: React.FC = () => {
 
   const resetFilters = () => setFilters({ free: false, wheelchair: false, diaper: false });
 
+  const cancelRecenter = () => {
+    if (recenterTimer.current) clearTimeout(recenterTimer.current);
+    if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
+    setRecenterCountdown(null);
+  };
+
   const handleViewportChanged = (center: Location, zoom: number) => {
     // Update refs only — no state update means no re-render → breaks the ChangeView loop.
     mapViewCenter.current = center;
@@ -283,12 +291,27 @@ const App: React.FC = () => {
       setShowSearchHere(dist > 500);
     }
 
-    // Auto re-center after 15s of inactivity when panned away from user location
+    // Auto re-center after 15 s with a visible countdown the user can cancel.
     if (recenterTimer.current) clearTimeout(recenterTimer.current);
+    if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
+    setRecenterCountdown(null);
     if (location) {
       const distFromUser = haversineDistance(location, center);
       if (distFromUser > 100) {
+        let secs = 15;
+        setRecenterCountdown(secs);
+        recenterCountdownInterval.current = setInterval(() => {
+          secs -= 1;
+          if (secs <= 0) {
+            clearInterval(recenterCountdownInterval.current!);
+            setRecenterCountdown(null);
+          } else {
+            setRecenterCountdown(secs);
+          }
+        }, 1000);
         recenterTimer.current = setTimeout(() => {
+          clearInterval(recenterCountdownInterval.current!);
+          setRecenterCountdown(null);
           setMapCenter(location);
           setMapZoom(17);
         }, 15000);
@@ -343,6 +366,21 @@ const App: React.FC = () => {
             <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
           </svg>
         </button>
+      )}
+
+      {/* Recenter countdown pill */}
+      {recenterCountdown !== null && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-slide-down">
+          <div className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700/90 rounded-full shadow-lg">
+            <span>returning to your location in {recenterCountdown}s</span>
+            <button
+              onClick={cancelRecenter}
+              className="ml-1 px-2 py-0.5 text-xs font-bold bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+            >
+              cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Floating "search this area" pill when user pans away */}
