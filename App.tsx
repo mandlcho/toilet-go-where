@@ -53,8 +53,10 @@ const App: React.FC = () => {
   const [showSearchHere, setShowSearchHere] = useState(false);
   const [showList, setShowList] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [recenterCountdown, setRecenterCountdown] = useState<number | null>(null);
   const lastSearchCenter = useRef<Location | null>(null);
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recenterCountdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
 
   useEffect(() => {
@@ -163,14 +165,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const params = decodeShareParams();
     if (!params) return;
-    const { id, lat, lng } = params;
+    const { id, lat, lng, category } = params;
     setMapCenter({ lat, lng });
     setMapZoom(17);
     (async () => {
       try {
-        const results = await findToilets({ lat, lng });
+        const isAtm = category === 'atm';
+        const results = isAtm ? await findAtms({ lat, lng }) : await findToilets({ lat, lng });
         setToilets(results);
-        setActiveCategory('toilet');
+        setActiveCategory(isAtm ? 'atm' : 'toilet');
         setHasSearched(true);
         lastSearchCenter.current = { lat, lng };
         const match = results.find((t) => t.id === id);
@@ -179,7 +182,7 @@ const App: React.FC = () => {
           window.history.replaceState(
             {},
             '',
-            encodeShareUrl({ id: match.id, lat: match.location.lat, lng: match.location.lng })
+            encodeShareUrl({ id: match.id, lat: match.location.lat, lng: match.location.lng, category })
           );
         }
       } catch {
@@ -274,6 +277,12 @@ const App: React.FC = () => {
 
   const resetFilters = () => setFilters({ free: false, wheelchair: false, diaper: false });
 
+  const cancelRecenter = () => {
+    if (recenterTimer.current) clearTimeout(recenterTimer.current);
+    if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
+    setRecenterCountdown(null);
+  };
+
   const handleViewportChanged = (center: Location, zoom: number) => {
     // Update refs only — no state update means no re-render → breaks the ChangeView loop.
     mapViewCenter.current = center;
@@ -283,12 +292,27 @@ const App: React.FC = () => {
       setShowSearchHere(dist > 500);
     }
 
-    // Auto re-center after 15s of inactivity when panned away from user location
+    // Auto re-center after 15 s with a visible countdown the user can cancel.
     if (recenterTimer.current) clearTimeout(recenterTimer.current);
+    if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
+    setRecenterCountdown(null);
     if (location) {
       const distFromUser = haversineDistance(location, center);
       if (distFromUser > 100) {
+        let secs = 15;
+        setRecenterCountdown(secs);
+        recenterCountdownInterval.current = setInterval(() => {
+          secs -= 1;
+          if (secs <= 0) {
+            clearInterval(recenterCountdownInterval.current!);
+            setRecenterCountdown(null);
+          } else {
+            setRecenterCountdown(secs);
+          }
+        }, 1000);
         recenterTimer.current = setTimeout(() => {
+          clearInterval(recenterCountdownInterval.current!);
+          setRecenterCountdown(null);
           setMapCenter(location);
           setMapZoom(17);
         }, 15000);
@@ -302,7 +326,12 @@ const App: React.FC = () => {
     window.history.pushState(
       {},
       '',
-      encodeShareUrl({ id: toilet.id, lat: toilet.location.lat, lng: toilet.location.lng })
+      encodeShareUrl({
+        id: toilet.id,
+        lat: toilet.location.lat,
+        lng: toilet.location.lng,
+        category: toilet.category === 'atm' ? 'atm' : 'toilet',
+      })
     );
   };
 
@@ -343,6 +372,21 @@ const App: React.FC = () => {
             <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
           </svg>
         </button>
+      )}
+
+      {/* Recenter countdown pill */}
+      {recenterCountdown !== null && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 animate-slide-down">
+          <div className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-700/90 rounded-full shadow-lg">
+            <span>returning to your location in {recenterCountdown}s</span>
+            <button
+              onClick={cancelRecenter}
+              className="ml-1 px-2 py-0.5 text-xs font-bold bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+            >
+              cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Floating "search this area" pill when user pans away */}
@@ -425,11 +469,19 @@ const App: React.FC = () => {
         {!isFinding && (
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={handleFindIts}
+              onClick={() => {
+                if (hasSearched && filteredToilets.length > 0) {
+                  setShowList(true);
+                } else {
+                  activeCategory === 'atm' ? handleFindAtms() : handleFindIts();
+                }
+              }}
               disabled={isFinding}
               className="px-6 py-3 text-base font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
             >
-              {hasSearched ? `find ${activeCategory === 'atm' ? 'atms' : 'toilets'} (${filteredToilets.length})` : `find ${activeCategory === 'atm' ? 'atms' : 'toilets'}`}
+              {hasSearched
+                ? `${activeCategory === 'atm' ? 'atms' : 'toilets'} (${filteredToilets.length})`
+                : `find ${activeCategory === 'atm' ? 'atms' : 'toilets'}`}
             </button>
 
           </div>

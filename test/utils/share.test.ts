@@ -20,6 +20,16 @@ describe('encodeShareUrl', () => {
     expect(url.searchParams.get('lat')).toBe('1.300000');
     expect(url.searchParams.get('lng')).toBe('103.800000');
   });
+
+  it('includes cat=atm when category is atm', () => {
+    const result = encodeShareUrl({ id: 'atm-1', lat: 1.3, lng: 103.8, category: 'atm' });
+    expect(new URL(result).searchParams.get('cat')).toBe('atm');
+  });
+
+  it('omits cat param when category is not provided', () => {
+    const result = encodeShareUrl({ id: 'toilet-1', lat: 1.3, lng: 103.8 });
+    expect(new URL(result).searchParams.get('cat')).toBeNull();
+  });
 });
 
 describe('decodeShareParams', () => {
@@ -42,24 +52,31 @@ describe('decodeShareParams', () => {
     expect(decodeShareParams()).toBeNull();
   });
 
-  it('parses valid params into a ShareParams object', () => {
+  it('parses valid params into a ShareParams object, defaulting to toilet', () => {
     window.history.pushState({}, '', '?id=toilet-42&lat=1.234567&lng=103.987654');
     expect(decodeShareParams()).toEqual({
       id: 'toilet-42',
       lat: 1.234567,
       lng: 103.987654,
+      category: 'toilet',
     });
+  });
+
+  it('parses cat=atm as category atm', () => {
+    window.history.pushState({}, '', '?id=atm-1&lat=1.3&lng=103.8&cat=atm');
+    expect(decodeShareParams()?.category).toBe('atm');
   });
 });
 
 describe('clearShareParams', () => {
-  it('removes id, lat, lng from the URL', () => {
-    window.history.pushState({}, '', '?id=t1&lat=1.3&lng=103.8');
+  it('removes id, lat, lng, cat from the URL', () => {
+    window.history.pushState({}, '', '?id=t1&lat=1.3&lng=103.8&cat=atm');
     clearShareParams();
     const p = new URLSearchParams(window.location.search);
     expect(p.get('id')).toBeNull();
     expect(p.get('lat')).toBeNull();
     expect(p.get('lng')).toBeNull();
+    expect(p.get('cat')).toBeNull();
   });
 
   it('preserves unrelated params', () => {

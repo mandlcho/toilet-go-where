@@ -2,6 +2,7 @@ export interface ShareParams {
   id: string;
   lat: number;
   lng: number;
+  category?: 'toilet' | 'atm';
 }
 
 export function encodeShareUrl(params: ShareParams): string {
@@ -9,6 +10,7 @@ export function encodeShareUrl(params: ShareParams): string {
   url.searchParams.set('id', params.id);
   url.searchParams.set('lat', params.lat.toFixed(6));
   url.searchParams.set('lng', params.lng.toFixed(6));
+  if (params.category) url.searchParams.set('cat', params.category);
   return url.toString();
 }
 
@@ -21,7 +23,9 @@ export function decodeShareParams(): ShareParams | null {
   const latNum = parseFloat(lat);
   const lngNum = parseFloat(lng);
   if (isNaN(latNum) || isNaN(lngNum)) return null;
-  return { id, lat: latNum, lng: lngNum };
+  const cat = params.get('cat');
+  const category = cat === 'atm' ? 'atm' : 'toilet';
+  return { id, lat: latNum, lng: lngNum, category };
 }
 
 export function clearShareParams(): void {
@@ -29,5 +33,6 @@ export function clearShareParams(): void {
   url.searchParams.delete('id');
   url.searchParams.delete('lat');
   url.searchParams.delete('lng');
+  url.searchParams.delete('cat');
   window.history.replaceState({}, '', url.toString());
 }
