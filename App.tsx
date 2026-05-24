@@ -59,6 +59,7 @@ const App: React.FC = () => {
   const recenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recenterCountdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
+  const suppressRecenter = useRef(false);
 
 
   useEffect(() => {
@@ -281,9 +282,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!leafletMap.current) return;
-    // Shift the visible centre up/down to keep it above the bottom sheet.
-    // BottomSheet PEEK_HEIGHT = 320 px → pan by half (160 px).
+    suppressRecenter.current = true;
     leafletMap.current.panBy([0, selectedToilet ? -160 : 160], { animate: true, duration: 0.25 });
+    setTimeout(() => { suppressRecenter.current = false; }, 400);
   }, [selectedToilet !== null]);
 
   const cancelRecenter = () => {
@@ -301,13 +302,16 @@ const App: React.FC = () => {
       setShowSearchHere(dist > 500);
     }
 
+    // Suppress countdown for programmatic pans (e.g. sheet open/close panBy).
+    if (suppressRecenter.current) return;
+
     // Auto re-center after 15 s with a visible countdown the user can cancel.
     if (recenterTimer.current) clearTimeout(recenterTimer.current);
     if (recenterCountdownInterval.current) clearInterval(recenterCountdownInterval.current);
     setRecenterCountdown(null);
     if (location) {
       const distFromUser = haversineDistance(location, center);
-      if (distFromUser > 100) {
+      if (distFromUser > 300) {
         let secs = 15;
         setRecenterCountdown(secs);
         recenterCountdownInterval.current = setInterval(() => {
