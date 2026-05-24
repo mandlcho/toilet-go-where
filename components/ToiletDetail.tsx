@@ -127,11 +127,17 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const amenities = [
-    toilet.fee === false && 'free',
-    toilet.wheelchair && 'wheelchair accessible',
-    toilet.diaper && 'diaper changing',
-  ].filter(Boolean);
+  const isAtm = toilet.category === 'atm';
+  const amenities = isAtm
+    ? []
+    : [
+        toilet.fee === false && 'free',
+        toilet.wheelchair && 'wheelchair accessible',
+        toilet.diaper && 'diaper changing',
+      ].filter(Boolean);
+  const atmInfo = isAtm
+    ? [toilet.operator, toilet.network, toilet.brand].filter(Boolean).join(' • ')
+    : null;
 
   return (
     <div className="space-y-4">
@@ -141,7 +147,8 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
           <h2 className="text-lg font-bold">{toilet.name}</h2>
           <FavoriteButton place={toilet} userId={user?.uid ?? null} />
         </div>
-        {toilet.housedIn && <p className="text-xs text-gray-500">inside {toilet.housedIn}</p>}
+        {!isAtm && toilet.housedIn && <p className="text-xs text-gray-500">inside {toilet.housedIn}</p>}
+        {atmInfo && <p className="text-xs text-gray-500">{atmInfo}</p>}
         <p className="text-xs text-gray-500 mt-1">{address || 'loading address...'}</p>
         <p className="text-xs text-gray-400 mt-1">
           {toilet.openingHours || 'hours not available'}
@@ -171,8 +178,8 @@ const ToiletDetail: React.FC<ToiletDetailProps> = ({ toilet, user, onUserChange,
         </div>
       )}
 
-      {/* Condition tags */}
-      <ConditionTags toiletId={toilet.id} userId={user?.uid ?? null} />
+      {/* Condition tags — toilet-only */}
+      {!isAtm && <ConditionTags toiletId={toilet.id} userId={user?.uid ?? null} />}
 
       {/* Actions */}
       <div className="flex gap-2">
