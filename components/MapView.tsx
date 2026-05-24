@@ -88,6 +88,12 @@ function MapEventsHandler({
 }
 
 
+function MapReadyReporter({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
+  const map = useMap();
+  useEffect(() => { onMapReady(map); }, []);
+  return null;
+}
+
 interface MapViewProps {
   userLocation: Location | null;
   toilets: Toilet[];
@@ -96,9 +102,10 @@ interface MapViewProps {
   onViewportChanged: (center: Location, zoom: number) => void;
   onToiletSelect: (toilet: Toilet) => void;
   highlightedId?: string | null;
+  onMapReady?: (map: L.Map) => void;
 }
 
-const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, onViewportChanged, onToiletSelect, highlightedId }) => {
+const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, onViewportChanged, onToiletSelect, highlightedId, onMapReady }) => {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
 
   const visibleToilets = bounds
@@ -109,6 +116,7 @@ const MapView: React.FC<MapViewProps> = ({ userLocation, toilets, center, zoom, 
     <MapContainer center={[center.lat, center.lng]} zoom={zoom} scrollWheelZoom={true} zoomSnap={0} className="h-full w-full z-0">
       <ChangeView center={[center.lat, center.lng]} zoom={zoom} />
       <MapEventsHandler onViewportChanged={onViewportChanged} onBoundsChange={setBounds} />
+      {onMapReady && <MapReadyReporter onMapReady={onMapReady} />}
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">openstreetmap</a> contributors &copy; <a href="https://carto.com/attributions">carto</a>'
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
