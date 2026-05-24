@@ -425,11 +425,19 @@ const App: React.FC = () => {
         {!isFinding && (
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={handleFindIts}
+              onClick={() => {
+                if (hasSearched && filteredToilets.length > 0) {
+                  setShowList(true);
+                } else {
+                  activeCategory === 'atm' ? handleFindAtms() : handleFindIts();
+                }
+              }}
               disabled={isFinding}
               className="px-6 py-3 text-base font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
             >
-              {hasSearched ? `find ${activeCategory === 'atm' ? 'atms' : 'toilets'} (${filteredToilets.length})` : `find ${activeCategory === 'atm' ? 'atms' : 'toilets'}`}
+              {hasSearched
+                ? `${activeCategory === 'atm' ? 'atms' : 'toilets'} (${filteredToilets.length})`
+                : `find ${activeCategory === 'atm' ? 'atms' : 'toilets'}`}
             </button>
 
           </div>
